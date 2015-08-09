@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"strconv"
+	//"strconv"
 )
 
 // Db_request ist the structure of requests send to the database component
@@ -69,28 +69,26 @@ func distributeRequest(db *sql.DB, req Request) {
 	}
 }
 
-func checkNames(db *sql.DB, p Message) Data {
+func checkNames(db *sql.DB, message Message) Data {
 	ret := make(Data)
+	freeNames := make([]string, 0)
 
-	cnt := 0
-	for i := 0; ; i++ {
-		name, ok := p["name"+strconv.Itoa(i)]
-		if !ok {
-			break
-		}
-
+	names := message.Names
+	for i := 0; i < len(names); i++ {
+		name := names[i]
 		fmt.Println("Checking name ", name)
 
 		err := db.QueryRow("select name from Names where name = ?", name).Scan(&name)
 		switch {
 		case err == sql.ErrNoRows:
-			ret["name"+strconv.Itoa(cnt)] = name
-			cnt++
+			freeNames = append(freeNames, name)
 		case err == nil:
 		default:
 			panic("checkNames: " + err.Error())
 		}
 	}
+
+	ret["Names"] = freeNames
 
 	return ret
 }

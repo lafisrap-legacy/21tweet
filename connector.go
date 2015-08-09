@@ -3,7 +3,7 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"encoding/json"
-	"errors"
+	_ "errors"
 	"fmt"
 	"github.com/jimlawless/cfg"
 	"io"
@@ -29,10 +29,14 @@ func (s socket) Close() error {
 }
 
 // Message defines a websocket message
-type Message map[string]string
+type Message struct {
+	Id      int
+	Command string
+	Names   []string
+}
 
 // Data is a map for command parameter to and from the controller
-type Data map[string]string
+type Data map[string]interface{}
 
 // loadConfig load the config file "bees.cfg""
 func loadConfig() map[string]string {
@@ -100,47 +104,39 @@ func translateMessages(s socket, requestChan chan Request) {
 			s.done <- true
 			return
 		}
-		var newId string
-		if id, ok := message["id"]; !ok {
-			fmt.Println("Message ", message, "is missing and id.")
+		if message.Id == 0 {
+			fmt.Println("connector.go/translateMessages: Message misses an id.")
 			s.done <- true
 			return
-		} else {
-			delete(message, "id")
-			newId = id
 		}
+
 		// open up a data channel for responses
 		dataChan := make(chan Data)
-		if command, ok := message["command"]; ok {
-
-			delete(message, "command")
-			switch command {
-			case "checkNames":
-				fallthrough
-			case "changeName":
-				fallthrough
-			case "tweet":
-				request := Request{
-					request:   command,
-					dataChan:  dataChan,
-					parameter: message,
-				}
-
-				requestChan <- request
-
-				catchReturn(dataChan, encoder, newId)
+		switch message.Command {
+		case "checkNames":
+			fallthrough
+		case "changeName":
+			fallthrough
+		case "tweet":
+			request := Request{
+				request:   message.Command,
+				dataChan:  dataChan,
+				parameter: message,
 			}
-		} else {
-			err = errors.New("No command.")
+
+			requestChan <- request
+			catchReturn(dataChan, encoder, message.Id)
+		default:
+			fmt.Println("connector.go/translateMessages: Unknown command", message.Command)
 		}
 	}
 }
 
-func catchReturn(dataChan chan Data, encoder *json.Encoder, id string) {
+func catchReturn(dataChan chan Data, encoder *json.Encoder, id int) {
 	select {
 	case data := <-dataChan:
 		fmt.Println("Got message back!", data)
-		data["id"] = id
+		data["Id"] = id
 		encoder.Encode(&data)
 	}
 }
