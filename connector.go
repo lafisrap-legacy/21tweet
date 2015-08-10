@@ -33,6 +33,7 @@ type Message struct {
 	Id      int
 	Command string
 	Names   []string
+	Tweet   string
 }
 
 // Data is a map for command parameter to and from the controller

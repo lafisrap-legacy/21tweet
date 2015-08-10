@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	//"strconv"
 )
 
 // Db_request ist the structure of requests send to the database component
@@ -115,26 +114,28 @@ func changeName(db *sql.DB, p Message) Data {
 	}
 }
 
-func tweet(db *sql.DB, p Message) Data {
-	var err error
-	var res sql.Result
-	var ok bool
-	if ok {
-		res, err = db.Exec("SELECT name FROM names")
-		if err != nil {
-			panic("checkNames: " + err.Error())
+func tweet(db *sql.DB, message Message) Data {
+	//var err error
+	//var res sql.Result
+	//var ok bool
+
+	fmt.Println("Database function tweet reached with message", message.Tweet, "!")
+	Tweet(message.Tweet)
+	/*
+		if ok {
+			res, err = db.Exec("SELECT name FROM names")
+			if err != nil {
+				panic("checkNames: " + err.Error())
+			} else {
+				return Data{}
+			}
 		} else {
-			return Data{}
+			err = errors.New("GameState parameter missing.")
 		}
-	} else {
-		err = errors.New("GameState parameter missing.")
-	}
 
-	fmt.Println(res)
-
-	return Data{
-		"error": err.Error(),
-	}
+		fmt.Println(res)
+	*/
+	return Data{}
 }
 
 /*
