@@ -34,6 +34,9 @@ type Message struct {
 	Command string
 	Names   []string
 	Tweet   string
+	OldName string
+	NewName string
+	Hash    string
 }
 
 // Data is a map for command parameter to and from the controller

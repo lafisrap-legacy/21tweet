@@ -92,25 +92,54 @@ func checkNames(db *sql.DB, message Message) Data {
 	return ret
 }
 
-func changeName(db *sql.DB, p Message) Data {
-	var err error
-	var res sql.Result
-	var ok bool
-	if ok {
-		res, err = db.Exec("SELECT name FROM names")
-		if err != nil {
-			panic("checkNames: " + err.Error())
-		} else {
-			return Data{}
+func changeName(db *sql.DB, message Message) Data {
+	var (
+		err  error
+		res  string
+		name string
+		hash string
+	)
+
+	/////////////////////////////////////////////////
+	// Delete oldname
+	if message.OldName != "" {
+		err := db.QueryRow("SELECT name, hash FROM Names WHERE name = ?", message.OldName).Scan(&name, &hash)
+		switch {
+		case err == sql.ErrNoRows:
+			err = errors.New("OldName '" + message.OldName + "' was not found in the database.")
+		case err == nil:
+			if hash == message.Hash {
+				_, err = db.Exec("DELETE FROM Names WHERE name = ?", message.OldName)
+				if err != nil {
+					panic("changeName: " + err.Error())
+				}
+			} else {
+				err = errors.New("Oldname '" + message.OldName + "' was found, but hash is invalid.")
+				res = "hash not valid"
+			}
+		default:
+			panic("changeName: " + err.Error())
 		}
-	} else {
-		err = errors.New("GameState parameter missing.")
 	}
 
-	fmt.Println(res)
+	//////////////////////////////////////////////////
+	// Insert new word
+	if err == nil {
+		err := db.QueryRow("SELECT name FROM Names WHERE name = ?", message.NewName).Scan(&name)
+		switch {
+		case err == sql.ErrNoRows:
+			_, err := db.Exec("INSERT INTO Names (name, hash) values (?,?)", message.NewName, message.Hash)
+			if err != nil {
+				panic("changeWord: " + err.Error())
+			}
+			res = "ok"
+		case err == nil:
+			res = "duplicate"
+		}
+	}
 
 	return Data{
-		"error": err.Error(),
+		"Result": res,
 	}
 }
 
