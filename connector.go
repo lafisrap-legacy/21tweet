@@ -130,6 +130,10 @@ func translateMessages(s socket, requestChan chan Request) {
 
 			requestChan <- request
 			catchReturn(dataChan, encoder, message.Id)
+		case "testConnection":
+			data := make(Data)
+			data["Id"] = message.Id
+			encoder.Encode(&data)
 		default:
 			fmt.Println("connector.go/translateMessages: Unknown command", message.Command)
 		}
